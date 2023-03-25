@@ -26,11 +26,12 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef void (*pFunction)(void);
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define FLASH_APP_ADDR 0x8008000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -46,13 +47,40 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
-
+void GoToApp();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void GoToApp()
+{
+	uint32_t jumpAddress;
+	pFunction jumpToApp;
 
+	// Check if there is something "installed" in the app FLASH region
+	//if(((*(uint32_t*) FLASH_APP_ADDR) & 0x2FFE0000) == 0x20000000)
+	if((*(uint32_t*) FLASH_APP_ADDR) != 0xFFFFFFFF)
+	{
+		// Jump to the application
+		jumpAddress = *(uint32_t *)(FLASH_APP_ADDR + 4);
+		jumpToApp = (pFunction)jumpAddress;
+
+		// SysTick
+		HAL_SuspendTick();
+		SysTick->VAL = 0;
+
+		// Init app stack ptr
+		__set_MSP(*(uint32_t *)FLASH_APP_ADDR);
+
+		// Jump
+		jumpToApp();
+	}
+	else // If no app installed
+	{
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -82,6 +110,7 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
+  MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -93,6 +122,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	GoToApp();
   }
   /* USER CODE END 3 */
 }
@@ -136,6 +166,30 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PD8 PD9 PD10 PD11 */
+  GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9|GPIO_PIN_10|GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
+
 }
 
 /* USER CODE BEGIN 4 */
