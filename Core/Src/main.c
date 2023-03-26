@@ -22,16 +22,22 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include <stdio.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
 typedef void (*pFunction)(void);
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 #define FLASH_APP_ADDR 0x8008000
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -43,6 +49,7 @@ typedef void (*pFunction)(void);
 CAN_HandleTypeDef hcan1;
 
 /* USER CODE BEGIN PV */
+
 CAN_TxHeaderTypeDef canTxHeader;
 CAN_RxHeaderTypeDef canRxHeader;
 
@@ -50,6 +57,7 @@ uint8_t canTxData[8];
 uint8_t canRxData[8];
 
 uint32_t canTxMailbox;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -62,6 +70,7 @@ static void MX_CAN1_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
 void GoToApp()
 {
 	uint32_t jumpAddress;
@@ -96,6 +105,16 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 {
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &canRxHeader, canRxData);
 }
+
+int _write(int file, char* ptr, int len)
+{
+	for (int i = 0; i < len; i++)
+	{
+		ITM_SendChar(*ptr++);
+	}
+	return len;
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -128,21 +147,22 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
+
   HAL_CAN_Start(&hcan1);
 
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 
-  canTxHeader.DLC = 2;
+  canTxHeader.StdId = 0x100;
+  canTxHeader.ExtId = 0x00;
+  canTxHeader.DLC = 8;
   canTxHeader.IDE = CAN_ID_STD;
   canTxHeader.RTR = CAN_RTR_DATA;
-  canTxHeader.StdId = 0x446;
 
-  canTxData[0] = 0xC3;
-  canRxData[1] = 0xD4;
+  for (int i = 0; i < 8; i++)
+  {
+	  canTxData[i] = i + 1;
+  }
 
-  HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, canTxData, &canTxMailbox);
-
-  HAL_Delay(100);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -152,7 +172,11 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	GoToApp();
+
+	HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, canTxData, &canTxMailbox);
+	HAL_Delay(1000);
+	//GoToApp();
+	printf("Hello there\n");
   }
   /* USER CODE END 3 */
 }
@@ -230,21 +254,6 @@ static void MX_CAN1_Init(void)
   }
   /* USER CODE BEGIN CAN1_Init 2 */
 
-  CAN_FilterTypeDef canFilter;
-
-  canFilter.FilterActivation = CAN_FILTER_ENABLE;
-  canFilter.FilterBank = 18;
-  canFilter.FilterFIFOAssignment = CAN_FILTER_FIFO0;
-  canFilter.FilterIdHigh = 0x103 << 5;
-  canFilter.FilterIdLow = 0;
-  canFilter.FilterMaskIdHigh = 0x103 << 5;
-  canFilter.FilterMaskIdLow = 0x0000;
-  canFilter.FilterMode = CAN_FILTERMODE_IDMASK;
-  canFilter.FilterScale = CAN_FILTERSCALE_32BIT;
-  canFilter.SlaveStartFilterBank = 20;
-
-  HAL_CAN_ConfigFilter(&hcan1, &canFilter);
-
   /* USER CODE END CAN1_Init 2 */
 
 }
@@ -259,7 +268,7 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
 }
 
