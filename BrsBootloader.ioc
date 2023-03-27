@@ -1,4 +1,7 @@
 #MicroXplorer Configuration settings - do not modify
+CAD.formats=
+CAD.pinconfig=
+CAD.provider=
 CAN1.BS1=CAN_BS1_6TQ
 CAN1.CalculateBaudRate=1000000
 CAN1.CalculateTimeBit=1000
@@ -26,8 +29,8 @@ Mcu.PinsNb=5
 Mcu.ThirdPartyNb=0
 Mcu.UserConstants=
 Mcu.UserName=STM32F407VGTx
-MxCube.Version=6.6.1
-MxDb.Version=DB.6.0.60
+MxCube.Version=6.8.0
+MxDb.Version=DB.6.0.80
 NVIC.BusFault_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:false
 NVIC.CAN1_RX0_IRQn=true\:0\:0\:false\:false\:true\:true\:true\:true
 NVIC.DebugMonitor_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:false
@@ -73,6 +76,7 @@ ProjectManager.PreviousToolchain=
 ProjectManager.ProjectBuild=false
 ProjectManager.ProjectFileName=BrsBootloader.ioc
 ProjectManager.ProjectName=BrsBootloader
+ProjectManager.ProjectStructure=
 ProjectManager.RegisterCallBack=
 ProjectManager.StackSize=0x400
 ProjectManager.TargetToolchain=STM32CubeIDE
