@@ -104,6 +104,7 @@ void GoToApp()
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 {
 	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &canRxHeader, canRxData);
+	printf("CAN RX\n");
 }
 
 int _write(int file, char* ptr, int len)
@@ -174,10 +175,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 
 	HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, canTxData, &canTxMailbox);
-	HAL_Delay(500);
-	printf("Hello there\n");
-	HAL_Delay(500);
-	printf("General Kenobi\n");
+	HAL_Delay(1000);
 
 	//GoToApp();
   }
