@@ -1,10 +1,10 @@
 #MicroXplorer Configuration settings - do not modify
-CAN1.BS1=CAN_BS1_3TQ
-CAN1.CalculateBaudRate=640000
-CAN1.CalculateTimeBit=1562
-CAN1.CalculateTimeQuantum=312.5
+CAN1.BS1=CAN_BS1_6TQ
+CAN1.CalculateBaudRate=1000000
+CAN1.CalculateTimeBit=1000
+CAN1.CalculateTimeQuantum=125.0
 CAN1.IPParameters=CalculateTimeQuantum,CalculateTimeBit,CalculateBaudRate,BS1,Prescaler
-CAN1.Prescaler=5
+CAN1.Prescaler=2
 File.Version=6
 GPIO.groupedBy=Group By Peripherals
 KeepUserPlacement=false
@@ -71,8 +71,8 @@ ProjectManager.MainLocation=Core/Src
 ProjectManager.NoMain=false
 ProjectManager.PreviousToolchain=
 ProjectManager.ProjectBuild=false
-ProjectManager.ProjectFileName=BrsBootloaderApp.ioc
-ProjectManager.ProjectName=BrsBootloaderApp
+ProjectManager.ProjectFileName=BrsBootloader.ioc
+ProjectManager.ProjectName=BrsBootloader
 ProjectManager.RegisterCallBack=
 ProjectManager.StackSize=0x400
 ProjectManager.TargetToolchain=STM32CubeIDE
