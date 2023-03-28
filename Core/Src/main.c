@@ -106,8 +106,13 @@ void GoToApp()
 
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 {
-	HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &canRxHeader, canRxData);
-	printf("CAN RX\n");
+	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &canRxHeader, canRxData) != HAL_OK)
+	{
+		printf("Failed to read CAN1 RX\n");
+		Error_Handler();
+	}
+
+	printf("ID: 0x%x\n", canRxHeader.StdId);
 }
 
 int _write(int file, char* ptr, int len)
