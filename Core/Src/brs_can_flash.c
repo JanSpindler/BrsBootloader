@@ -6,8 +6,19 @@
  */
 
 #include "brs_can_flash.h"
+#include "FLASH_SECTOR_F4.h"
 
-static enum CAN_FLASH_STATE state = CF_IDLE;
+const size_t FLASH_START_ADDR = 0x8000000;
+
+enum CAN_FLASH_STATE state = CF_IDLE;
+
+#define FLASH_BUFFER_WORD_COUNT 1024 // 4 KB
+uint32_t flashWordBuf[FLASH_BUFFER_WORD_COUNT];
+size_t flashWordBufIdx = 0;
+
+size_t appByteCount = 0;
+size_t appWordCount = 0;
+size_t flashAddr = FLASH_START_ADDR;
 
 enum CAN_FLASH_STATE get_can_flash_state()
 {
@@ -25,12 +36,31 @@ enum CAN_FLASH_STATE process_can_idle(
 	// Flash start request
 	if (msgId == CAN_MSG_ID_FLASH_INIT)
 	{
+		// Get and check rx dlc
+		const uint32_t dlc = rxHeader->DLC;
+		if (dlc != 8)
+		{
+			return CF_ERROR;
+		}
+
+		// Get app size
+		appByteCount = *(size_t*)rxData;
+		appWordCount = appByteCount / sizeof(uint32_t);
+
+		// Reset start address
+		flashAddr = FLASH_START_ADDR;
+
 		// Acknowledge
 		txHeader->StdId = CAN_MSG_ID_FLASH_ACK;
 		txHeader->ExtId = 0;
-		txHeader->DLC = 0;
+		txHeader->DLC = dlc;
 		txHeader->IDE = CAN_ID_STD;
 		txHeader->RTR = CAN_RTR_DATA;
+
+		for (int i = 0; i < dlc; i++)
+		{
+			txData[i] = rxData[i];
+		}
 
 		return CF_RX_READY;
 	}
@@ -49,30 +79,54 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 	// New data to flash
 	if (msgId == CAN_MSG_ID_FLASH_DATA)
 	{
-		// TODO: Flash
+		// Get and check rx dlc
+		const uint32_t dlc = rxHeader->DLC;
+		if (dlc != 8)
+		{
+			return CF_ERROR;
+		}
 
-		// TODO: Check if flashing is complete
-		// If flashing complete
-		if (0)
+		// Fill flash word buffer
+		const uint32_t* rxWords = (uint32_t*)rxData;
+		flashWordBuf[flashWordBufIdx++] = rxWords[0];
+		flashWordBuf[flashWordBufIdx++] = rxWords[1];
+
+		// If word buffer full
+		if (flashWordBufIdx == FLASH_BUFFER_WORD_COUNT)
+		{
+			// Flash
+			Flash_Write_Data(flashAddr, flashWordBuf, FLASH_BUFFER_WORD_COUNT);
+
+			// Increase flash address
+			flashAddr += sizeof(uint32_t) * FLASH_BUFFER_WORD_COUNT;
+
+			// Reset flash word buffer
+			flashWordBufIdx = 0;
+		}
+
+		// If flashing finished
+		if (flashAddr == FLASH_START_ADDR + appByteCount)
 		{
 			// TODO: Maybe some integrity checks in flash memory
 
+			// Send flash finished message
 			txHeader->StdId = CAN_MSG_ID_FLASH_FIN;
 			txHeader->ExtId = 0;
-			txHeader->DLC = rxHeader->DLC;
+			txHeader->DLC = dlc;
 			txHeader->IDE = CAN_ID_STD;
 			txHeader->RTR = CAN_RTR_DATA;
 
-			for (uint32_t i = 0; i < rxHeader->DLC; i++)
+			for (uint32_t i = 0; i < dlc; i++)
 			{
 				txData[i] = rxData[i];
 			}
 
 			return CF_FINISHED;
 		}
-		// If flashing not complete
+		// If flashing not finished
 		else
 		{
+			// Acknowledge
 			txHeader->StdId = CAN_MSG_ID_FLASH_ACK;
 			txHeader->ExtId = 0;
 			txHeader->DLC = rxHeader->DLC;
