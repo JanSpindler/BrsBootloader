@@ -23,6 +23,7 @@
 /* USER CODE BEGIN Includes */
 
 #include <stdio.h>
+#include "brs_can_flash.h"
 
 /* USER CODE END Includes */
 
@@ -112,7 +113,10 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 		Error_Handler();
 	}
 
-	printf("ID: 0x%x\n", canRxHeader.StdId);
+	process_can(&canRxHeader, canRxData, &canTxHeader, canTxData);
+	HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, canTxData, &canTxMailbox);
+
+	printf("ID: 0x%x\n", (unsigned int)canRxHeader.StdId);
 }
 
 int _write(int file, char* ptr, int len)
@@ -204,7 +208,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, canTxData, &canTxMailbox);
+//	HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, canTxData, &canTxMailbox);
 	HAL_Delay(1000);
 //	GoToApp();
   }
