@@ -184,7 +184,7 @@ int main(void)
 
   HAL_CAN_ActivateNotification(&hcan1, CAN_IT_RX_FIFO0_MSG_PENDING);
 
-  canTxHeader.StdId = 0x100;
+  canTxHeader.StdId = 0x42;
   canTxHeader.ExtId = 0x00;
   canTxHeader.DLC = 8;
   canTxHeader.IDE = CAN_ID_STD;
