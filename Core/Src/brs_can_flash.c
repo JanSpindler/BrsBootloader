@@ -76,8 +76,13 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 {
 	const uint32_t msgId = rxHeader->StdId;
 
-	// New data to flash
-	if (msgId == CAN_MSG_ID_FLASH_DATA)
+	// If init flash (can occur in this state)
+	if (msgId == CAN_MSG_ID_FLASH_INIT)
+	{
+		return process_can_idle(rxHeader, rxData, txHeader, txData);
+	}
+	// If new data to flash
+	else if (msgId == CAN_MSG_ID_FLASH_DATA)
 	{
 		// Get and check rx dlc
 		const uint32_t dlc = rxHeader->DLC;
@@ -129,11 +134,11 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 			// Acknowledge
 			txHeader->StdId = CAN_MSG_ID_FLASH_ACK;
 			txHeader->ExtId = 0;
-			txHeader->DLC = rxHeader->DLC;
+			txHeader->DLC = dlc;
 			txHeader->IDE = CAN_ID_STD;
 			txHeader->RTR = CAN_RTR_DATA;
 
-			for (uint32_t i = 0; i < rxHeader->DLC; i++)
+			for (uint32_t i = 0; i < dlc; i++)
 			{
 				txData[i] = rxData[i];
 			}
@@ -151,6 +156,14 @@ enum CAN_FLASH_STATE process_can_finished(
 	CAN_TxHeaderTypeDef* txHeader,
 	uint8_t* txData)
 {
+	const uint32_t msgId = rxHeader->StdId;
+
+	// If init flash (can occur in this state)
+	if (msgId == CAN_MSG_ID_FLASH_INIT)
+	{
+		return process_can_idle(rxHeader, rxData, txHeader, txData);
+	}
+
 	// TODO: Implement post finished can messages
 
 	return CF_ERROR;
@@ -162,6 +175,14 @@ enum CAN_FLASH_STATE process_can_error(
 	CAN_TxHeaderTypeDef* txHeader,
 	uint8_t* txData)
 {
+	const uint32_t msgId = rxHeader->StdId;
+
+	// If init flash (can occur in this state)
+	if (msgId == CAN_MSG_ID_FLASH_INIT)
+	{
+		return process_can_idle(rxHeader, rxData, txHeader, txData);
+	}
+
 	// TODO: Implement error handling
 
 	return CF_ERROR;
