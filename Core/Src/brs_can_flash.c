@@ -115,8 +115,10 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 			flashWordBufIdx = 0;
 		}
 
+		// TODO: Last word buffer is likely to exceed appByteCount -> handle?
+
 		// If flashing finished
-		if (flashAddr == FLASH_START_ADDR + appByteCount)
+		if (flashAddr >= FLASH_START_ADDR + appByteCount)
 		{
 			// TODO: Maybe some integrity checks in flash memory
 

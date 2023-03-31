@@ -116,7 +116,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 	process_can(&canRxHeader, canRxData, &canTxHeader, canTxData);
 	HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, canTxData, &canTxMailbox);
 
-	printf("ID: 0x%x\n", (unsigned int)canRxHeader.StdId);
+//	printf("ID: 0x%x\n", (unsigned int)canRxHeader.StdId);
 }
 
 int _write(int file, char* ptr, int len)
