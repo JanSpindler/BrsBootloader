@@ -102,14 +102,14 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 		flashWordBuf[flashWordBufIdx++] = rxWords[0];
 		flashWordBuf[flashWordBufIdx++] = rxWords[1];
 
+		// Increase flash address
+		flashAddr += sizeof(uint32_t) * 2;
+
 		// If word buffer full
 		if (flashWordBufIdx == FLASH_BUFFER_WORD_COUNT)
 		{
 			// Flash
 			Flash_Write_Data(flashAddr, flashWordBuf, FLASH_BUFFER_WORD_COUNT);
-
-			// Increase flash address
-			flashAddr += sizeof(uint32_t) * FLASH_BUFFER_WORD_COUNT;
 
 			// Reset flash word buffer
 			flashWordBufIdx = 0;
@@ -120,6 +120,19 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 		// If flashing finished
 		if (flashAddr >= FLASH_START_ADDR + appByteCount)
 		{
+			// If transmission complete but word buffer not empty
+			if (flashWordBufIdx > 0)
+			{
+				// Calculate remaining bytes
+				const uint32_t restByteCount = sizeof(uint32_t) * flashWordBufIdx;
+
+				// Flash last word buffer
+				Flash_Write_Data(flashAddr - restByteCount, flashWordBuf, flashWordBufIdx);
+
+				// Reset flash word buffer
+				flashWordBufIdx = 0;
+			}
+
 			// TODO: Maybe some integrity checks in flash memory
 
 			// Send flash finished message
