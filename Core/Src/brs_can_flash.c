@@ -15,11 +15,11 @@ enum CAN_FLASH_STATE state = CF_IDLE;
 
 #define FLASH_BUFFER_WORD_COUNT 1024 // 4 KB
 uint32_t flashWordBuf[FLASH_BUFFER_WORD_COUNT];
-size_t flashWordBufIdx = 0;
+uint32_t flashWordBufIdx = 0;
 
-size_t appByteCount = 0;
-size_t appWordCount = 0;
-size_t flashAddr = FLASH_START_ADDR;
+uint32_t appByteCount = 0;
+uint32_t appWordCount = 0;
+uint32_t flashAddr = FLASH_START_ADDR;
 
 enum CAN_FLASH_STATE get_can_flash_state()
 {
@@ -45,8 +45,13 @@ enum CAN_FLASH_STATE process_can_idle(
 		}
 
 		// Get app size
-		appByteCount = *(size_t*)rxData;
+		appByteCount = 0;
+		for (int byteIdx = 0; byteIdx < 8; byteIdx++)
+		{
+			appByteCount |= rxData[7 - byteIdx] << (8 * byteIdx);
+		}
 		appWordCount = appByteCount / sizeof(uint32_t);
+		printf("%x\n", (unsigned int)appByteCount);
 
 		// Reset start address
 		flashAddr = FLASH_START_ADDR;
@@ -115,7 +120,6 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 		{
 			// TODO: Maybe some integrity checks in flash memory
 
-			printf("%x\n", flashAddr);
 			// Send flash finished message
 			txHeader->StdId = CAN_MSG_ID_FLASH_FIN;
 			txHeader->ExtId = 0;
