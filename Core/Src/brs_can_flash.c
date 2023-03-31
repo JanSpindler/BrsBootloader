@@ -7,8 +7,9 @@
 
 #include "brs_can_flash.h"
 #include "FLASH_SECTOR_F4.h"
+#include <stdio.h>
 
-const size_t FLASH_START_ADDR = 0x8000000;
+const size_t FLASH_START_ADDR = 0x8008000;
 
 enum CAN_FLASH_STATE state = CF_IDLE;
 
@@ -114,6 +115,7 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 		{
 			// TODO: Maybe some integrity checks in flash memory
 
+			printf("%x\n", flashAddr);
 			// Send flash finished message
 			txHeader->StdId = CAN_MSG_ID_FLASH_FIN;
 			txHeader->ExtId = 0;
