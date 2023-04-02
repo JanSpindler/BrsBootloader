@@ -105,6 +105,8 @@ void GoToApp()
 	}
 }
 
+uint8_t flashRx = 0;
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 {
 	if (HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &canRxHeader, canRxData) != HAL_OK)
@@ -113,10 +115,16 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef* hcan)
 		Error_Handler();
 	}
 
-	process_can(&canRxHeader, canRxData, &canTxHeader, canTxData);
-	HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, canTxData, &canTxMailbox);
+	const uint32_t msgId = canRxHeader.StdId;
 
-//	printf("ID: 0x%x\n", (unsigned int)canRxHeader.StdId);
+//	printf("ID: 0x%x\n", (unsigned int)msgId);
+
+	// If message is part of can-flash-protocol
+	if (msgId == CAN_MSG_ID_FLASH_INIT || msgId == CAN_MSG_ID_FLASH_DATA)
+	{
+		// Notify main loop that new flash relevant message has been received
+		flashRx = 1;
+	}
 }
 
 int _write(int file, char* ptr, int len)
@@ -208,9 +216,19 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-//	HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, canTxData, &canTxMailbox);
-	HAL_Delay(1000);
 //	GoToApp();
+	// If can msg has been received
+    if (flashRx == 1)
+    {
+    	// Use brs can flash protocol
+    	process_can(&canRxHeader, canRxData, &canTxHeader, canTxData);
+
+    	// Send reply
+    	HAL_CAN_AddTxMessage(&hcan1, &canTxHeader, canTxData, &canTxMailbox);
+
+    	// Reset status
+    	flashRx = 0;
+    }
   }
 
   printf("Ending bootloader.\n");

@@ -51,10 +51,12 @@ enum CAN_FLASH_STATE process_can_idle(
 			appByteCount |= rxData[7 - byteIdx] << (8 * byteIdx);
 		}
 		appWordCount = appByteCount / sizeof(uint32_t);
-		printf("hex: %x | dec: %d\n", (unsigned int)appByteCount, (unsigned int)appByteCount);
 
 		// Reset start address
 		flashAddr = FLASH_START_ADDR;
+
+		// Print
+		printf("Flashing initialized (%d Bytes)\n", (int)appByteCount);
 
 		// Acknowledge
 		txHeader->StdId = CAN_MSG_ID_FLASH_ACK;
@@ -109,15 +111,24 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 		if (flashWordBufIdx == FLASH_BUFFER_WORD_COUNT)
 		{
 			// Flash
-//			Flash_Write_Data(flashAddr, flashWordBuf, FLASH_BUFFER_WORD_COUNT);
+			Flash_Write_Data(flashAddr, flashWordBuf, FLASH_BUFFER_WORD_COUNT);
 
 			// Reset flash word buffer
 			flashWordBufIdx = 0;
 		}
 
-		// TODO: Last word buffer is likely to exceed appByteCount -> handle?
-
-		printf("%x\n", (unsigned int)flashAddr);
+		// Print flash progress on every %
+		const uint32_t flashIdx = flashAddr - FLASH_START_ADDR;
+		const uint32_t percentSize = appByteCount / 100;
+		const uint32_t idxModPercent = flashIdx % percentSize;
+		if (idxModPercent < 8)// || idxModPercent > percentSize - 8)
+		{
+			printf(
+				"Flash data transmission progress: %d / %d | Current address 0x%x\n",
+				(int)flashIdx,
+				(int)appByteCount,
+				(unsigned int)flashAddr);
+		}
 
 		// If flashing finished
 		if (flashAddr == FLASH_START_ADDR + appByteCount)
@@ -136,6 +147,9 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 			}
 
 			// TODO: Maybe some integrity checks in flash memory
+
+			// Print
+			printf("Flashing finished\n");
 
 			// Send flash finished message
 			txHeader->StdId = CAN_MSG_ID_FLASH_FIN;
