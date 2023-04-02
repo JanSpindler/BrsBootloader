@@ -13,7 +13,8 @@
 static const uint32_t CAN_MSG_ID_FLASH_INIT = 0x100; // Sent from host to init flashing
 static const uint32_t CAN_MSG_ID_FLASH_DATA = 0x101; // Sent from host to transmit 8 byte of flash data
 static const uint32_t CAN_MSG_ID_FLASH_ACK = 0x102; // Sent from controller to acknowledge flash init or data frame
-static const uint32_t CAN_MSG_ID_FLASH_FIN = 0x103;
+static const uint32_t CAN_MSG_ID_FLASH_FIN = 0x103; // Sent from controller when flashing is finished
+static const uint32_t CAN_MSG_ID_FLASH_ERR = 0x104; // Sent when flashing protocol has reached error state
 
 enum CAN_FLASH_STATE
 {

@@ -9,17 +9,17 @@
 #include "FLASH_SECTOR_F4.h"
 #include <stdio.h>
 
-const size_t FLASH_START_ADDR = 0x8008000;
+static const uint32_t FLASH_START_ADDR = 0x8008000;
 
 enum CAN_FLASH_STATE state = CF_IDLE;
 
 #define FLASH_BUFFER_WORD_COUNT 1024 // 4 KB
-uint32_t flashWordBuf[FLASH_BUFFER_WORD_COUNT];
-uint32_t flashWordBufIdx = 0;
+static uint32_t flashWordBuf[FLASH_BUFFER_WORD_COUNT];
+static uint32_t flashWordBufIdx = 0;
 
-uint32_t appByteCount = 0;
-uint32_t appWordCount = 0;
-uint32_t flashAddr = FLASH_START_ADDR;
+static uint32_t appByteCount = 0;
+static uint32_t appWordCount = 0;
+static uint32_t flashAddr = FLASH_START_ADDR;
 
 enum CAN_FLASH_STATE get_can_flash_state()
 {
@@ -51,7 +51,7 @@ enum CAN_FLASH_STATE process_can_idle(
 			appByteCount |= rxData[7 - byteIdx] << (8 * byteIdx);
 		}
 		appWordCount = appByteCount / sizeof(uint32_t);
-		printf("%x\n", (unsigned int)appByteCount);
+		printf("hex: %x | dec: %d\n", (unsigned int)appByteCount, (unsigned int)appByteCount);
 
 		// Reset start address
 		flashAddr = FLASH_START_ADDR;
@@ -109,7 +109,7 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 		if (flashWordBufIdx == FLASH_BUFFER_WORD_COUNT)
 		{
 			// Flash
-			Flash_Write_Data(flashAddr, flashWordBuf, FLASH_BUFFER_WORD_COUNT);
+//			Flash_Write_Data(flashAddr, flashWordBuf, FLASH_BUFFER_WORD_COUNT);
 
 			// Reset flash word buffer
 			flashWordBufIdx = 0;
@@ -117,8 +117,10 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 
 		// TODO: Last word buffer is likely to exceed appByteCount -> handle?
 
+		printf("%x\n", (unsigned int)flashAddr);
+
 		// If flashing finished
-		if (flashAddr >= FLASH_START_ADDR + appByteCount)
+		if (flashAddr == FLASH_START_ADDR + appByteCount)
 		{
 			// If transmission complete but word buffer not empty
 			if (flashWordBufIdx > 0)
@@ -148,6 +150,11 @@ enum CAN_FLASH_STATE process_can_rx_ready(
 			}
 
 			return CF_FINISHED;
+		}
+		// If flashAddr exceeds flash file size
+		else if (flashAddr > FLASH_START_ADDR + appByteCount)
+		{
+			return CF_ERROR;
 		}
 		// If flashing not finished
 		else
@@ -215,6 +222,7 @@ void process_can(
 	CAN_TxHeaderTypeDef* txHeader,
 	uint8_t* txData)
 {
+	// State machine
 	switch (state)
 	{
 	case CF_IDLE:
@@ -232,5 +240,15 @@ void process_can(
 	default:
 		state = CF_ERROR;
 		break;
+	}
+
+	// On protocol error
+	if (state == CF_ERROR)
+	{
+		txHeader->StdId = CAN_MSG_ID_FLASH_ERR;
+		txHeader->ExtId = 0;
+		txHeader->DLC = 0;
+		txHeader->IDE = CAN_ID_STD;
+		txHeader->RTR = CAN_RTR_DATA;
 	}
 }
